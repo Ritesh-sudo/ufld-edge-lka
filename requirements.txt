@@ -1,0 +1,16 @@
+# Core (Phase 1-2). Python 3.12; MPS needs Apple Silicon + macOS 12.3+.
+# On Colab (CUDA) the preinstalled torch/torchvision are used; pip the rest only.
+torch>=2.15
+torchvision>=0.29
+numpy>=2.5
+opencv-python>=4.10
+pillow>=13.0
+scipy>=1.18
+tqdm>=4.70
+tensorboard>=2.21
+
+# Phase 3 (edge export/benchmark) - add when we get there; coremltools'
+# tested torch range lags new torch releases, so check before installing:
+# onnx
+# onnxruntime
+# coremltools
