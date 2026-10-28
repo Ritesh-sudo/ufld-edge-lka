@@ -128,14 +128,17 @@ why. I need to be able to explain every part of this project in interviews.
 Fill these in as they are created:
 
 ```bash
-# environment
-# pip install -r requirements.txt
+# environment (Python 3.12)
+# uv venv --python 3.12 venv && source venv/bin/activate && uv pip install -r requirements.txt
+
+# prepare TuSimple (masks + train_gt.txt + test.txt), data in data/tusimple/
+python scripts/convert_tusimple.py --root data/tusimple
 
 # sanity training on a small subset (local, MPS)
-# python scripts/train.py --config configs/tusimple_res18.py --subset 200 --epochs 2
+python scripts/train.py --config configs/tusimple_res18.py --subset 200 --epochs 2
 
-# evaluation
-# python scripts/eval_tusimple.py --config ... --ckpt ...
+# evaluation (official TuSimple Accuracy/FP/FN); --out appends a row to a results CSV
+python scripts/eval_tusimple.py --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth
 
 # benchmarking
 # python scripts/benchmark.py --backend {torch-mps,torch-cpu,onnx,coreml} --ckpt ...
@@ -143,8 +146,8 @@ Fill these in as they are created:
 # demo
 # python scripts/demo_video.py --video path/to/dashcam.mp4 --ckpt ...
 
-# tests
-# pytest
+# tests (golden tests compare against reference/Ultra-Fast-Lane-Detection)
+pytest
 ```
 
 ---

@@ -43,6 +43,6 @@ def make_tusimple(root, seed=0):
         (root / fname).write_text('\n'.join(json.dumps(e) for e in chunk))
     test = [{'raw_file': e['raw_file'], 'h_samples': H_SAMPLES, 'lanes': e['lanes'], 'run_time': 10}
             for e in entries[:2]]
-    (root / 'test_tasks_0627.json').write_text('\n'.join(json.dumps({'raw_file': t['raw_file']}) for t in test))
+    (root / 'test_tasks_0627.json').write_text('\n'.join(json.dumps({'lanes': [], 'h_samples': H_SAMPLES, 'raw_file': t['raw_file']}) for t in test))
     (root / 'test_label.json').write_text('\n'.join(json.dumps(t) for t in test))
     return root
