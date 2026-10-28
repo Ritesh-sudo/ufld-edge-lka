@@ -28,6 +28,9 @@ def ref():
             import model.model
             import utils.loss
             import utils.metrics
+            import utils.factory
+            import evaluation.eval_wrapper
+            import evaluation.tusimple.lane
         return SimpleNamespace(
             parsingNet=model.model.parsingNet,
             constant=data.constant,
@@ -35,6 +38,9 @@ def ref():
             mytransforms=data.mytransforms,
             loss=utils.loss,
             metrics=utils.metrics,
+            factory=utils.factory,
+            eval_wrapper=evaluation.eval_wrapper,
+            lane=evaluation.tusimple.lane,
             root=REF,
         )
     finally:
