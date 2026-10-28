@@ -1,0 +1,36 @@
+# data, third-party reference code
+data/
+reference/
+
+# checkpoints
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.mlpackage/
+*.mlmodel
+
+# videos
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# environments
+venv/
+.venv/
+
+# caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
