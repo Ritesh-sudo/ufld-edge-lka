@@ -78,3 +78,37 @@ def test_module_prefix_is_stripped(cfg, tmp_path):
 def test_parse_overrides():
     assert parse_overrides(['batch_size=4', 'optimizer=SGD', "backbone='34'", 'lr=1e-3']) == {
         'batch_size': 4, 'optimizer': 'SGD', 'backbone': '34', 'lr': 1e-3}
+
+
+def test_checkpoint_write_is_atomic(cfg, tmp_path):
+    model = build_model(cfg, pretrained=False)
+    save_checkpoint(model, get_optimizer(model, cfg), 0, tmp_path / 'last.pth')
+    assert [p.name for p in tmp_path.iterdir()] == ['last.pth']  # no stray .tmp left behind
+    save_checkpoint(model, get_optimizer(model, cfg), 1, tmp_path / 'last.pth')  # overwrite in place
+    assert torch.load(tmp_path / 'last.pth', weights_only=True)['epoch'] == 1
+
+
+def test_lr_schedule_continues_after_resume(cfg):
+    """Why train.py builds the scheduler before restoring the optimizer."""
+    c = load_config(ROOT / 'configs' / 'tusimple_res18.py', {'warmup': None, 'epoch': 100})
+    lin = lambda: torch.nn.Linear(2, 2)
+
+    opt_a = get_optimizer(lin(), c)
+    sched_a = get_scheduler(opt_a, c, iters_per_epoch=10)
+    for g in range(300):                       # 30 epochs, then "disconnect"
+        sched_a.step(g)
+    saved = opt_a.state_dict()
+    sched_a.step(300)
+    expected = opt_a.param_groups[0]['lr']
+
+    opt_b = get_optimizer(lin(), c)            # correct order: scheduler first, then restore
+    sched_b = get_scheduler(opt_b, c, iters_per_epoch=10)
+    opt_b.load_state_dict(saved)
+    sched_b.step(300)
+    assert opt_b.param_groups[0]['lr'] == pytest.approx(expected)
+
+    opt_c = get_optimizer(lin(), c)            # original order: restore first -> wrong base lr
+    opt_c.load_state_dict(saved)
+    sched_c = get_scheduler(opt_c, c, iters_per_epoch=10)
+    sched_c.step(300)
+    assert opt_c.param_groups[0]['lr'] != pytest.approx(expected, rel=0.05)

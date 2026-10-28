@@ -1,4 +1,5 @@
 """Save/load checkpoints safely (weights_only) and device-agnostically."""
+import os
 from pathlib import Path
 
 import torch
@@ -8,7 +9,11 @@ def save_checkpoint(model, optimizer, epoch: int, path: str | Path) -> None:
     # changed: store the epoch inside the file; the original parsed it out of "epNNN.pth".
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}, path)
+    # Write to a temp file and rename, so a Colab disconnect mid-write (esp. on Drive) can
+    # never leave a truncated last.pth that the next resume would try to load.
+    tmp = path.with_name(path.name + '.tmp')
+    torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}, tmp)
+    os.replace(tmp, path)
 
 
 def load_model_weights(model, path: str | Path, device='cpu') -> dict:

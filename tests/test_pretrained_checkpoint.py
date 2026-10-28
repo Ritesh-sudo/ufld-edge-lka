@@ -34,7 +34,17 @@ def test_loads_strictly_and_matches_reference(ref):
     assert got.std() > 1e-2  # not degenerate (e.g. all-equal logits)
 
 
-def test_cpu_and_accelerator_agree():
+@pytest.fixture
+def strict_fp32():
+    # Ampere+ GPUs run cuDNN convs/matmuls in TF32 by default (~1e-3 relative error), which would make
+    # this comparison measure TF32 instead of the port. No effect on CPU/MPS.
+    old = torch.backends.cudnn.allow_tf32, torch.backends.cuda.matmul.allow_tf32
+    torch.backends.cudnn.allow_tf32 = torch.backends.cuda.matmul.allow_tf32 = False
+    yield
+    torch.backends.cudnn.allow_tf32, torch.backends.cuda.matmul.allow_tf32 = old
+
+
+def test_cpu_and_accelerator_agree(strict_fp32):
     model = build_model(CFG, pretrained=False, use_aux=False)
     load_model_weights(model, CKPT)
     model.eval()

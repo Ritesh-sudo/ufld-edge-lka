@@ -60,16 +60,17 @@ def test_row_anchors_in_config_match_reference(ref):
     assert CFG.row_anchor == ref.constant.tusimple_row_anchor
 
 
-def _make_pair(ref, root, use_aux, simu=False):
+def _make_pair(ref, root, use_aux, simu=False, list_file=None):
+    list_file = str(list_file or root / 'train_gt.txt')
     imgt = T.Compose([T.Resize((288, 800)), T.ToTensor(), T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
     segt = T.Compose([ref.mytransforms.FreeScaleMask((36, 100)), ref.mytransforms.MaskToTensor()])
     ref_ds = ref.dataset.LaneClsDataset(
-        str(root), str(root / 'train_gt.txt'), img_transform=imgt, simu_transform=(
+        str(root), list_file, img_transform=imgt, simu_transform=(
             ref.mytransforms.Compose2([ref.mytransforms.RandomRotate(6), ref.mytransforms.RandomUDoffsetLABEL(100),
                                        ref.mytransforms.RandomLROffsetLABEL(200)]) if simu else None),
         griding_num=100, row_anchor=list(CFG.row_anchor), segment_transform=segt, use_aux=use_aux, num_lanes=4)
     our_ds = LaneClsDataset(
-        str(root), str(root / 'train_gt.txt'), row_anchor=CFG.row_anchor, griding_num=100, num_lanes=4, use_aux=use_aux,
+        str(root), list_file, row_anchor=CFG.row_anchor, griding_num=100, num_lanes=4, use_aux=use_aux,
         img_transform=imgt, segment_transform=T.Compose([mt.FreeScaleMask((36, 100)), mt.MaskToTensor()]),
         simu_transform=(mt.Compose2([mt.RandomRotate(6), mt.RandomUDoffsetLABEL(100), mt.RandomLROffsetLABEL(200)])
                         if simu else None))

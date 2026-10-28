@@ -14,6 +14,8 @@ tensorboard>=2.21
 # Dev / tests
 pytest>=8
 gdown>=5   # fetch the authors' pretrained checkpoint from Google Drive
+kaggle>=2  # fetch the TuSimple dataset (scripts/fetch_tusimple_kaggle.py, Colab notebook)
+scikit-learn>=1.5  # only the golden tests: the original repo's metric imports it
 
 # Phase 3 (edge export/benchmark) - add when we get there; coremltools'
 # tested torch range lags new torch releases, so check before installing:

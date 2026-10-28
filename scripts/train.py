@@ -35,6 +35,9 @@ def main():
     ap.add_argument('--device', default=None, help='cuda | mps | cpu (default: best available)')
     ap.add_argument('--subset', type=int, default=None, help='train on the first N images only')
     ap.add_argument('--epochs', type=int, default=None, help='override cfg.epoch')
+    ap.add_argument('--work-dir', default=None,
+                    help='run directory for logs/checkpoints. If it holds a last.pth, training resumes from it '
+                         '(use a fixed path, e.g. on Drive, to survive Colab disconnects)')
     ap.add_argument('--set', nargs='*', default=[], metavar='KEY=VALUE', help='config overrides')
     args = ap.parse_args()
 
@@ -43,8 +46,11 @@ def main():
         overrides['epoch'] = args.epochs
     cfg = load_config(args.config, overrides)
 
-    work_dir = Path(cfg.log_path) / f"{datetime.datetime.now():%Y%m%d_%H%M%S}_{Path(args.config).stem}"
+    work_dir = Path(args.work_dir) if args.work_dir else \
+        Path(cfg.log_path) / f"{datetime.datetime.now():%Y%m%d_%H%M%S}_{Path(args.config).stem}"
     work_dir.mkdir(parents=True, exist_ok=True)
+    if cfg.resume is None and (work_dir / 'last.pth').exists():
+        cfg.resume = str(work_dir / 'last.pth')  # auto-resume after an interruption
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                         handlers=[logging.StreamHandler(), logging.FileHandler(work_dir / 'train.log')])
     set_seed(cfg.seed)
@@ -55,6 +61,10 @@ def main():
     loader = build_train_loader(cfg, device, args.subset)
     model = build_model(cfg, pretrained=cfg.resume is None and cfg.finetune is None).to(device)
     optimizer = get_optimizer(model, cfg)
+    # changed: the scheduler must be built BEFORE the optimizer state is restored. It records the
+    # optimizer's lr as its base lr; after a restore that lr is the already-decayed one, so a
+    # scheduler built afterwards (as in the original) would decay from the wrong starting value.
+    scheduler = get_scheduler(optimizer, cfg, len(loader))
 
     if cfg.finetune is not None:
         # only the backbone ('model.*' keys) is taken from the finetune checkpoint
@@ -62,18 +72,16 @@ def main():
         model.load_state_dict({k: v for k, v in state.items() if k.startswith('model.')}, strict=False)
     start_epoch = 0
     if cfg.resume is not None:
-        ckpt = torch.load(cfg.resume, map_location='cpu', weights_only=True)
-        load_model_weights(model, cfg.resume)
+        ckpt = load_model_weights(model, cfg.resume)
         optimizer.load_state_dict(ckpt['optimizer'])
         start_epoch = ckpt['epoch'] + 1
         log.info('resumed from %s at epoch %d', cfg.resume, start_epoch)
-
-    scheduler = get_scheduler(optimizer, cfg, len(loader))
     loss_fn = LaneLoss(cfg)
     writer = SummaryWriter(work_dir)
     log.info('%d iterations/epoch, %d epochs', len(loader), cfg.epoch)
 
     for epoch in range(start_epoch, cfg.epoch):
+        loader.generator.manual_seed(cfg.seed + epoch)  # shuffle order depends on the epoch, not on history
         mean_loss = train_one_epoch(model, loader, loss_fn, optimizer, scheduler, device, cfg, epoch, writer)
         log.info('epoch %d mean loss %.4f', epoch, mean_loss)
         save_checkpoint(model, optimizer, epoch, work_dir / 'last.pth')

@@ -16,7 +16,13 @@ real ADAS lane-keep-assist (LKA) system.
 ## Goals (in order)
 
 1. **Reproduce** the TuSimple ResNet-18 baseline and land close to the paper's reported
-   accuracy (~95.8%; verify the exact figure against the paper's table).
+   accuracy. Reference numbers (checked against the paper, arXiv:2004.11757v4, Table 5):
+   - Paper, ResNet-18: **95.87%** accuracy (ResNet-34: 96.06%). Table 5 reports accuracy and
+     runtime only; **the paper has no FP/FN for TuSimple**, so FP/FN are reported for our runs
+     but there is nothing to compare them to.
+   - Authors' released ResNet-18 checkpoint (original repo README): 95.82%.
+   - Our port + the released checkpoint, full test set (2,782 images), Apple M4 / MPS:
+     **95.8154%** (FP 0.1904, FN 0.0391), `results/pretrained_eval.csv`.
 2. **Modernize** the code to run on current PyTorch across CUDA (Colab), MPS (Apple
    Silicon), and CPU from a single codebase.
 3. **Benchmark on edge hardware** (original contribution): latency/FPS on the M4 with
@@ -131,11 +137,18 @@ Fill these in as they are created:
 # environment (Python 3.12)
 # uv venv --python 3.12 venv && source venv/bin/activate && uv pip install -r requirements.txt
 
-# prepare TuSimple (masks + train_gt.txt + test.txt), data in data/tusimple/
-python scripts/convert_tusimple.py --root data/tusimple
+# TuSimple: the official links are dead; the Kaggle mirror manideep1108/tusimple is used.
+# Full dataset (Colab does this in notebooks/colab_train.ipynb): download, then
+python scripts/arrange_tusimple.py --src <extracted download> --dst data/tusimple   # merge train/test clips
+python scripts/convert_tusimple.py --root data/tusimple                            # masks, train_gt.txt, test.txt
+# Local sample only (rate-limited API; slow, resumable): python scripts/fetch_tusimple_kaggle.py {meta,test,train}
 
-# sanity training on a small subset (local, MPS)
+# sanity training on a small subset (local, MPS). python.org builds of Python lack a CA bundle,
+# so downloading the ImageNet backbone may need:  export SSL_CERT_FILE=$(python -c 'import certifi;print(certifi.where())')
 python scripts/train.py --config configs/tusimple_res18.py --subset 200 --epochs 2
+
+# full training (Colab): a fixed --work-dir makes it resume from <work-dir>/last.pth after a disconnect
+python scripts/train.py --config configs/tusimple_res18.py --work-dir /content/drive/MyDrive/ufld/res18_tusimple
 
 # evaluation (official TuSimple Accuracy/FP/FN); --out appends a row to a results CSV
 python scripts/eval_tusimple.py --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth
