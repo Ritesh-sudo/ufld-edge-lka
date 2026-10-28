@@ -51,6 +51,7 @@ shp_loss_w = 0.0      # the original disables the shape loss on TuSimple
 
 # EXP
 log_path = 'runs'     # tensorboard logs and checkpoints (gitignored via *.pth)
+save_every = 10       # keep ep%03d.pth every N epochs (last.pth is always kept)
 finetune = None
 resume = None
 

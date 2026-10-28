@@ -7,6 +7,7 @@ A config is a plain .py file of module-level variables (configs/tusimple_res18.p
 changed: replaces the original utils/config.py + addict + argparse merging, which pulled in
 extra dependencies and mixed CLI parsing with config loading.
 """
+import ast
 import importlib.util
 import json
 from pathlib import Path
@@ -63,3 +64,15 @@ def dump_config(cfg: SimpleNamespace, out_dir: str | Path) -> Path:
     path = out / 'config.json'
     path.write_text(json.dumps(vars(cfg), indent=2, default=list))
     return path
+
+
+def parse_overrides(pairs: list[str]) -> dict[str, Any]:
+    """["batch_size=4", "optimizer='SGD'"] -> {"batch_size": 4, "optimizer": "SGD"} (values are python literals)."""
+    out = {}
+    for pair in pairs:
+        key, _, raw = pair.partition('=')
+        try:
+            out[key] = ast.literal_eval(raw)
+        except (ValueError, SyntaxError):
+            out[key] = raw  # bare string, e.g. optimizer=SGD
+    return out
