@@ -145,20 +145,28 @@ def generate_segmentation_and_train_list(root, line_txt, names):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True, help='The root of the Tusimple dataset')
+    # changed: the original hardcoded the three train files and test_tasks_0627.json.
+    parser.add_argument('--label-files', nargs='*',
+                        default=['label_data_0601.json', 'label_data_0531.json', 'label_data_0313.json'],
+                        help='train annotation files under --root (subsets are fine)')
     return parser
 
 if __name__ == "__main__":
     args = get_args().parse_args()
 
     # training set
-    names,line_txt = get_tusimple_list(args.root,  ['label_data_0601.json','label_data_0531.json','label_data_0313.json'])
+    names,line_txt = get_tusimple_list(args.root, args.label_files)
     # generate segmentation and training list for training
     generate_segmentation_and_train_list(args.root, line_txt, names)
 
     # testing set
-    names,line_txt = get_tusimple_list(args.root, ['test_tasks_0627.json'])
-    # generate testing set for testing
+    # changed: some mirrors lack test_tasks_0627.json; test_label.json lists the same
+    # images (the benchmark's test tasks), so fall back to it.
+    tasks = os.path.join(args.root, 'test_tasks_0627.json')
+    if not os.path.exists(tasks):
+        tasks = os.path.join(args.root, 'test_label.json')
+        print('test_tasks_0627.json not found; deriving test.txt from test_label.json')
+    names,_ = get_tusimple_list(args.root, [os.path.basename(tasks)])
     with open(os.path.join(args.root,'test.txt'),'w') as fp:
         for name in names:
             fp.write(name + '\n')
-

@@ -1,0 +1,2 @@
+config,ckpt,device,images,accuracy_pct,fp,fn
+tusimple_res18.py,tusimple_18.pth,mps,2782,95.8154,0.190421,0.039121

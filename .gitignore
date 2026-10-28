@@ -34,3 +34,6 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# training/eval outputs
+runs/
