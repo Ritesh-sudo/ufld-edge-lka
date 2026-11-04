@@ -1,0 +1,17 @@
+backend,input,batch,warmup,runs,stage,mean_ms,p50_ms,p95_ms,fps_mean,host,note
+torch-mps,288x800,1,30,200,model,7.875,7.804,8.171,127.0,macOS-27.2,fp32/fp16 as exported
+torch-mps,288x800,1,30,200,model+decode,8.067,8.020,8.307,124.0,macOS-27.2,fp32/fp16 as exported
+torch-cpu,288x800,1,30,200,model,27.188,27.138,27.914,36.8,macOS-27.2,fp32/fp16 as exported
+torch-cpu,288x800,1,30,200,model+decode,27.726,27.705,28.504,36.1,macOS-27.2,fp32/fp16 as exported
+onnx-cpu,288x800,1,30,200,model,16.182,14.917,19.708,61.8,macOS-27.2,fp32/fp16 as exported
+onnx-cpu,288x800,1,30,200,model+decode,19.045,19.605,20.336,52.5,macOS-27.2,fp32/fp16 as exported
+onnx-coreml,288x800,1,30,200,model,3.084,3.071,3.302,324.3,macOS-27.2,fp32/fp16 as exported
+onnx-coreml,288x800,1,30,200,model+decode,3.380,3.390,3.594,295.9,macOS-27.2,fp32/fp16 as exported
+coreml-cpu,288x800,1,30,200,model,8.082,8.103,8.546,123.7,macOS-27.2,fp32/fp16 as exported
+coreml-cpu,288x800,1,30,200,model+decode,8.239,8.200,8.743,121.4,macOS-27.2,fp32/fp16 as exported
+coreml-gpu,288x800,1,30,200,model,4.364,4.334,4.595,229.2,macOS-27.2,fp32/fp16 as exported
+coreml-gpu,288x800,1,30,200,model+decode,4.519,4.486,4.755,221.3,macOS-27.2,fp32/fp16 as exported
+coreml-ne,288x800,1,30,200,model,2.378,2.349,2.538,420.4,macOS-27.2,fp32/fp16 as exported
+coreml-ne,288x800,1,30,200,model+decode,2.584,2.573,2.660,387.0,macOS-27.2,fp32/fp16 as exported
+coreml-all,288x800,1,30,200,model,2.371,2.348,2.468,421.7,macOS-27.2,fp32/fp16 as exported
+coreml-all,288x800,1,30,200,model+decode,2.589,2.572,2.658,386.3,macOS-27.2,fp32/fp16 as exported

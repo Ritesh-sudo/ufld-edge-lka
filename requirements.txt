@@ -17,8 +17,9 @@ gdown>=5   # fetch the authors' pretrained checkpoint from Google Drive
 kaggle>=2  # fetch the TuSimple dataset (scripts/fetch_tusimple_kaggle.py, Colab notebook)
 scikit-learn>=1.5  # only the golden tests: the original repo's metric imports it
 
-# Phase 3 (edge export/benchmark) - add when we get there; coremltools'
-# tested torch range lags new torch releases, so check before installing:
-# onnx
-# onnxruntime
-# coremltools
+# Phase 3 (edge export/benchmark). coremltools' tested torch range lags new torch
+# releases (it warns on torch 2.15 but conversion works and is checked against PyTorch).
+onnx>=1.23
+onnxscript>=0.7
+onnxruntime>=1.31
+coremltools>=9.0
