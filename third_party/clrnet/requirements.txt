@@ -1,0 +1,2 @@
+# The port needs nothing beyond the main project's requirements (torch, torchvision, numpy, scipy, opencv-python).
+# Only the Colab CUDA-NMS comparison (notebooks/clrnet_nms_check.ipynb) needs upstream's old stack, installed there.

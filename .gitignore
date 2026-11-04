@@ -40,3 +40,4 @@ runs/
 
 # upstream CLRNet clone (reference only; our isolated code goes in third_party/clrnet/)
 third_party/clrnet_src/
+!tests/data/
