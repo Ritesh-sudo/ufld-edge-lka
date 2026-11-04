@@ -1,0 +1,3 @@
+backend,input,batch,warmup,runs,stage,mean_ms,p50_ms,p95_ms,fps_mean,host,note
+onnx-cpu,288x800,1,30,200,model,7.442,7.377,7.579,134.4,macOS-27.2,"int8 QDQ per-channel, onnx-cpu"
+onnx-cpu,288x800,1,30,200,model+decode,7.668,7.662,7.709,130.4,macOS-27.2,"int8 QDQ per-channel, onnx-cpu"

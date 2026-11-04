@@ -1,0 +1,10 @@
+backend,mean_ms,p50_ms,p95_ms,fps,accuracy_pct,acc_source
+coreml-all,2.371,2.348,2.468,421.7,95.8142,same as coreml-ne
+coreml-ne,2.378,2.349,2.538,420.4,95.8142,measured
+onnx-coreml,3.084,3.071,3.302,324.3,,not measured
+coreml-gpu,4.364,4.334,4.595,229.2,95.8164,same as coreml-cpu
+onnx-cpu-int8,7.442,7.377,7.579,134.4,95.7758,measured
+torch-mps,7.875,7.804,8.171,127.0,95.8154,same as torch-cpu
+coreml-cpu,8.082,8.103,8.546,123.7,95.8164,measured
+onnx-cpu,16.182,14.917,19.708,61.8,95.8154,measured
+torch-cpu,27.188,27.138,27.914,36.8,95.8154,measured

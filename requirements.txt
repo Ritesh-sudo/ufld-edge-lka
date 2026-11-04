@@ -23,3 +23,4 @@ onnx>=1.23
 onnxscript>=0.7
 onnxruntime>=1.31
 coremltools>=9.0
+matplotlib>=3.9  # results plots
