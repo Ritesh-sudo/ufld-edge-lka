@@ -1,0 +1,7 @@
+key,model,input,device,model_ms,model_p95_ms,total_ms,total_p95_ms,accuracy_pct
+ufld-torch-mps,"UFLD R18 (PyTorch, mps)",288x800,mps,9.07,10.27,9.50,10.63,95.8154
+clrnet-torch-mps,"CLRNet R18 (PyTorch, mps)",320x800,mps,17.20,18.65,17.48,19.76,96.8357
+ufld-torch-cpu,"UFLD R18 (PyTorch, cpu)",288x800,cpu,30.11,32.40,30.25,32.53,95.8154
+clrnet-torch-cpu,"CLRNet R18 (PyTorch, cpu)",320x800,cpu,181.08,192.02,180.53,191.32,96.8357
+ufld-coreml-ane,"UFLD R18 (Core ML fp16, ANE)",288x800,ane,2.37,2.50,2.58,2.81,95.8142
+opencv-hough,OpenCV Canny+Hough,720x1280,cpu,,,1.69,2.03,51.0564

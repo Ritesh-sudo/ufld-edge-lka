@@ -15,7 +15,7 @@ The model, losses, data pipeline and evaluation are **ported from the authors' c
 }
 ```
 
-## Status (Phases 1-4; Colab training still pending)
+## Status (Phases 1-5 (CUDA-NMS check and Colab training pending); Colab training still pending)
 
 | | Accuracy | FP | FN |
 |---|---|---|---|
@@ -68,16 +68,31 @@ python scripts/eval_backend.py  --config configs/tusimple_res18.py --ckpt data/c
 
 **Limits, stated plainly.** There is no camera calibration for TuSimple, so meters rest on two assumptions (3.7 m lane width, 1000 px focal length on a 1280-wide frame; flat road, pinhole camera). The geometry is verified against synthetic roads built from the same model (`tests/test_adas_*.py`), which proves the math is self-consistent, **not** that the metric values match a real vehicle: there is no ground-truth offset to compare with. Treat meters as indicative. The released checkpoint is trained on TuSimple's highway view; a different camera will degrade it. The demo video has not yet been recorded on a real dashcam clip (only 20th frames of TuSimple test clips exist locally, so there is no consecutive-frame footage to use).
 
-## Baselines and comparison (Phase 5, in progress)
+## Comparison: UFLD vs CLRNet vs classic baseline (Phase 5)
 
-| Model | Accuracy | FP | FN | Latency (CPU/device) | Source |
-|---|---|---|---|---|---|
-| Predict no lanes at all (floor) | 43.02% | 0.9527 | 0.9761 | n/a | computed here |
-| OpenCV Canny + Hough (straight ego lanes) | 51.06% | 0.9840 | 0.9915 | 2.1 ms (M4 CPU, 1280x720) | `baselines/opencv_hough.py` |
-| UFLD ResNet-18 (released checkpoint) | 95.82% | 0.1904 | 0.0391 | 2.4-7.9 ms (see Edge table) | authors' checkpoint |
-| CLRNet | *not yet run* | | | | |
+Same TuSimple test set (2,782 images), same metric code (`LaneEval`) for every row, authors' unmodified weights. Latency: Apple M4, batch 1, one fixed real frame, 30 warm-up + 200 timed runs, each model at its native input size; "+decode" includes the model's own post-processing (UFLD: softmax/argmax; CLRNet: confidence filter + lane NMS + spline sampling). Image decoding/resizing is excluded. Run-to-run variation on this machine is about +/-10%. Data: `results/comparison.csv`; chart: `results/comparison_accuracy_vs_latency.png`.
 
-**Read the floor first.** The official TuSimple accuracy counts a row as correct when prediction and ground truth are *both* "no lane", so a detector that outputs nothing still scores 43%. The Hough baseline is only ~8 points above that. It finds at most two straight lanes, and the metric needs 85% of a lane's points within a pixel threshold to count it as matched, hence FP/FN near 1. The Hough latency is the detector alone on raw frames, not comparable like-for-like with the model rows (different resolution, no warm-up).
+| Model | Input | Device | Model ms | +decode ms | Accuracy | FP | FN |
+|---|---|---|---|---|---|---|---|
+| Predict no lanes (floor) | n/a | n/a | n/a | n/a | 43.02% | 0.9527 | 0.9761 |
+| OpenCV Canny + Hough | 720x1280 | CPU | n/a | 1.7 | 51.06% | 0.9840 | 0.9915 |
+| UFLD ResNet-18 | 288x800 | Core ML (ANE, fp16) | 2.4 | 2.6 | 95.81% | n/a | n/a |
+| UFLD ResNet-18 | 288x800 | PyTorch MPS | 9.1 | 9.5 | 95.82% | 0.1904 | 0.0391 |
+| UFLD ResNet-18 | 288x800 | PyTorch CPU | 30.1 | 30.3 | 95.82% | 0.1904 | 0.0391 |
+| CLRNet ResNet-18 | 320x800 | PyTorch MPS | 17.2 | 17.5 | **96.84%** | 0.0231 | 0.0194 |
+| CLRNet ResNet-18 | 320x800 | PyTorch CPU | 181.1 | 180.5 | 96.84%* | | |
+
+\* CPU accuracy not run separately; same weights as the MPS row. The UFLD Core ML FP/FN were not recorded.
+
+**Reading it.** CLRNet is about 1 accuracy point better than UFLD (96.84 vs 95.82) and roughly 2x slower on the same device (MPS), 6x on CPU. Note the two use different FP/FN conventions (UFLD's released numbers have far higher FP, 0.19 vs 0.02), which is the real accuracy difference: UFLD hallucinates extra lanes. On the TuSimple metric the headline gap looks small because both are near its ceiling. CLRNet has no Core ML export here, so the 2.4 ms Neural Engine point is UFLD-only; that favors UFLD in the "best available" comparison and is not like-for-like.
+
+**CLRNet reproduction.** Paper (CVPR 2022, ResNet-18, TuSimple): Acc 96.84, FDR 2.28, FNR 1.92. This port, authors' checkpoint, our metric: **96.8357**, FP 2.31, FN 1.94. Weights: [GitHub release `models/tusimple_r18.pth.zip`](https://github.com/Turoad/CLRNet/releases/tag/models) (sha256 of the zip `e0293100...c465`). Code is an inference-only port in `third_party/clrnet/` (no old mmcv; plain PyTorch on MPS/CPU/CUDA; the CUDA lane-NMS replaced by `nms.py`), credited to [Turoad/CLRNet](https://github.com/Turoad/CLRNet) (Apache-2.0, `third_party/clrnet/LICENSE_CLRNET.txt`). Please cite Zheng et al., CVPR 2022.
+
+**What is and is not verified for the NMS port.** Verified: it equals a line-by-line scalar transliteration of the CUDA kernel on random stress cases and on 100 real CLRNet inputs (`tests/test_clrnet_nms.py`), and the end-to-end accuracy reproduces the paper. **Not yet verified: against the real CUDA op.** That needs a GPU runtime: run `notebooks/clrnet_nms_check.ipynb` on Colab and record the result here. Until then the port is unproven against CUDA.
+
+**Why CLRNet is more accurate (and slower).** UFLD classifies one global feature vector into column cells at fixed rows. CLRNet keeps 192 lane priors and refines each across three feature-pyramid levels (cross-layer refinement): high-level features find the lane, low-level features place it precisely, then lane-NMS picks the final lanes.
+
+**Reading the metric.** TuSimple accuracy counts a row as correct when prediction and ground truth are both "no lane", so predicting nothing scores 43%; Hough is only ~8 points above that.
 
 ## Quick start
 
