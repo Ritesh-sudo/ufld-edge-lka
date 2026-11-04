@@ -68,6 +68,17 @@ python scripts/eval_backend.py  --config configs/tusimple_res18.py --ckpt data/c
 
 **Limits, stated plainly.** There is no camera calibration for TuSimple, so meters rest on two assumptions (3.7 m lane width, 1000 px focal length on a 1280-wide frame; flat road, pinhole camera). The geometry is verified against synthetic roads built from the same model (`tests/test_adas_*.py`), which proves the math is self-consistent, **not** that the metric values match a real vehicle: there is no ground-truth offset to compare with. Treat meters as indicative. The released checkpoint is trained on TuSimple's highway view; a different camera will degrade it. The demo video has not yet been recorded on a real dashcam clip (only 20th frames of TuSimple test clips exist locally, so there is no consecutive-frame footage to use).
 
+## Baselines and comparison (Phase 5, in progress)
+
+| Model | Accuracy | FP | FN | Latency (CPU/device) | Source |
+|---|---|---|---|---|---|
+| Predict no lanes at all (floor) | 43.02% | 0.9527 | 0.9761 | n/a | computed here |
+| OpenCV Canny + Hough (straight ego lanes) | 51.06% | 0.9840 | 0.9915 | 2.1 ms (M4 CPU, 1280x720) | `baselines/opencv_hough.py` |
+| UFLD ResNet-18 (released checkpoint) | 95.82% | 0.1904 | 0.0391 | 2.4-7.9 ms (see Edge table) | authors' checkpoint |
+| CLRNet | *not yet run* | | | | |
+
+**Read the floor first.** The official TuSimple accuracy counts a row as correct when prediction and ground truth are *both* "no lane", so a detector that outputs nothing still scores 43%. The Hough baseline is only ~8 points above that. It finds at most two straight lanes, and the metric needs 85% of a lane's points within a pixel threshold to count it as matched, hence FP/FN near 1. The Hough latency is the detector alone on raw frames, not comparable like-for-like with the model rows (different resolution, no warm-up).
+
 ## Quick start
 
 ```bash

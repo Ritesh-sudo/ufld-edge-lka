@@ -1,0 +1,2 @@
+backend,input,images,mean_ms,p50_ms,p95_ms,note
+opencv-hough,720x1280,2782,2.088,2.007,3.038,"CPU, detect_lanes only, no warm-up (stateless)"
