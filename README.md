@@ -15,7 +15,7 @@ The model, losses, data pipeline and evaluation are **ported from the authors' c
 }
 ```
 
-## Status (Phases 1-3; Colab training still pending)
+## Status (Phases 1-4; Colab training still pending)
 
 | | Accuracy | FP | FN |
 |---|---|---|---|
@@ -56,6 +56,17 @@ python scripts/quantize_onnx.py --config configs/tusimple_res18.py --onnx data/e
 python scripts/benchmark.py     --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth --onnx data/exports/ufld_res18.onnx --coreml data/exports/ufld_res18_fp16.mlpackage --backends torch-mps torch-cpu onnx-cpu coreml-ne
 python scripts/eval_backend.py  --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth --backend onnx-cpu --onnx data/exports/ufld_res18.onnx
 ```
+
+## ADAS layer (Phase 4)
+
+`adas/geometry.py` turns the detector's lanes into the two quantities a lane-keep-assist (LKA) controller needs; `adas/departure.py` adds a lane-departure warning (LDW); `scripts/demo_video.py` renders both on video (`--video clip.mp4`, or `--frames <glob>`).
+
+- **Lateral offset** (m, + = car right of lane center): the cross-track error. Ego lanes are the nearest detected lane on each side of the image center; if either side is missing, no offset is produced (a controller should hand over, not act on a guess).
+- **Curvature** (1/m): a quadratic fit of the lane-center line in road coordinates. Positive = road bends right ahead.
+- **Warning state machine:** OK / WARN_LEFT / WARN_RIGHT / LOST, with hysteresis (warn at 0.6 m, clear at 0.4 m), a 3-frame debounce, and a LOST state after 5 frames without an estimate.
+- **How this would feed a controller.** A typical LKA steering law is `steer = Kp * offset + Kd * d(offset)/dt + steer_ff(curvature)`: the offset is the feedback error term, curvature (together with speed) gives the feed-forward steering needed to follow the bend, and LOST/low-confidence tells the controller to disengage and warn the driver. This repo stops at the perception outputs; no controller is implemented or tested here.
+
+**Limits, stated plainly.** There is no camera calibration for TuSimple, so meters rest on two assumptions (3.7 m lane width, 1000 px focal length on a 1280-wide frame; flat road, pinhole camera). The geometry is verified against synthetic roads built from the same model (`tests/test_adas_*.py`), which proves the math is self-consistent, **not** that the metric values match a real vehicle: there is no ground-truth offset to compare with. Treat meters as indicative. The released checkpoint is trained on TuSimple's highway view; a different camera will degrade it. The demo video has not yet been recorded on a real dashcam clip (only 20th frames of TuSimple test clips exist locally, so there is no consecutive-frame footage to use).
 
 ## Quick start
 

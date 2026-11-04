@@ -162,7 +162,7 @@ python scripts/eval_backend.py --config configs/tusimple_res18.py --ckpt <ckpt> 
 python scripts/make_edge_report.py
 
 # demo
-# python scripts/demo_video.py --video path/to/dashcam.mp4 --ckpt ...
+python scripts/demo_video.py --video path/to/dashcam.mp4 --backend coreml-ne --coreml data/exports/ufld_res18_fp16.mlpackage --out results/demo.mp4
 
 # tests (golden tests compare against reference/Ultra-Fast-Lane-Detection)
 pytest
