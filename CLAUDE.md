@@ -153,8 +153,13 @@ python scripts/train.py --config configs/tusimple_res18.py --work-dir /content/d
 # evaluation (official TuSimple Accuracy/FP/FN); --out appends a row to a results CSV
 python scripts/eval_tusimple.py --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth
 
-# benchmarking
-# python scripts/benchmark.py --backend {torch-mps,torch-cpu,onnx,coreml} --ckpt ...
+# edge (Phase 3): export, quantize, benchmark, per-backend accuracy, report; see README "Edge deployment"
+python scripts/export_onnx.py --config configs/tusimple_res18.py --ckpt <ckpt>
+python scripts/export_coreml.py --config configs/tusimple_res18.py --ckpt <ckpt>
+python scripts/quantize_onnx.py --config configs/tusimple_res18.py --onnx data/exports/ufld_res18.onnx --out data/exports/ufld_res18_int8.onnx
+python scripts/benchmark.py --config configs/tusimple_res18.py --ckpt <ckpt> --onnx ... --coreml ... --backends torch-mps coreml-ne ...
+python scripts/eval_backend.py --config configs/tusimple_res18.py --ckpt <ckpt> --backend coreml-ne --coreml ...
+python scripts/make_edge_report.py
 
 # demo
 # python scripts/demo_video.py --video path/to/dashcam.mp4 --ckpt ...

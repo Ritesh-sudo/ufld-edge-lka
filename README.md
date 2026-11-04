@@ -15,7 +15,7 @@ The model, losses, data pipeline and evaluation are **ported from the authors' c
 }
 ```
 
-## Status (Phase 1-2)
+## Status (Phases 1-3; Colab training still pending)
 
 | | Accuracy | FP | FN |
 |---|---|---|---|
@@ -27,6 +27,35 @@ The model, losses, data pipeline and evaluation are **ported from the authors' c
 The released-checkpoint row shows the port (model, data decoding, official metric) reproduces the authors' number. It says nothing yet about training.
 
 **Verification.** `pytest` includes golden tests that run the original code (cloned into `reference/`, gitignored) next to the port and require identical outputs: model with shared weights, all losses, row-anchor labels, converter masks, the TuSimple metric, LR schedules. The tests on real TuSimple frames run on Colab (the local machine has only the test set). Not yet verified: CUDA execution (notebook written, not yet run on Colab).
+
+## Edge deployment (Phase 3)
+
+Apple M4, batch 1, 288x800 input, 30 warm-up + 200 timed runs, model forward only (host/device copies included, image loading excluded). Authors' released ResNet-18 checkpoint, full TuSimple test set (2,782 images). Plot: `results/edge_accuracy_vs_latency.png`; raw data: `results/edge_summary.csv`, `benchmark*.csv`, `backend_accuracy.csv`.
+
+| Backend | Mean ms | p95 ms | FPS | Accuracy |
+|---|---|---|---|---|
+| Core ML, Neural Engine (fp16) | 2.38 | 2.54 | 420 | 95.8142% |
+| ONNX Runtime + Core ML provider | 3.08 | 3.30 | 324 | not measured |
+| Core ML, CPU+GPU (fp16) | 4.36 | 4.60 | 229 | 95.8164%* |
+| ONNX Runtime CPU, INT8 | 7.44 | 7.58 | 134 | 95.7758% |
+| PyTorch MPS | 7.88 | 8.17 | 127 | 95.8154%* |
+| Core ML, CPU (fp16) | 8.08 | 8.55 | 124 | 95.8164% |
+| ONNX Runtime CPU, fp32 | 16.18 | 19.71 | 62 | 95.8154% |
+| PyTorch CPU | 27.19 | 27.91 | 37 | 95.8154% |
+
+\* Not run separately: value taken from the same model on another compute unit (CPU run / MPS run).
+
+- **Parity.** ONNX matches PyTorch to 2.5e-5 max logit difference with identical lane decisions; Core ML fp16 agrees on 99.7-99.8% of per-row decisions and costs ~0.001 accuracy points (`tests/test_export_parity.py`).
+- **INT8** (ONNX Runtime static PTQ, QDQ, per-channel): -0.04 accuracy points, 2.2x faster than ONNX fp32 on CPU, 4x smaller (61.7 MB vs 245 MB). Calibrated on 100 *test-set* frames (images only, no labels) because only the test split exists locally; this is mild leakage. This path does not use the Neural Engine, so the fastest (Core ML fp16) and the INT8 results are separate points.
+- Decoding logits to lane coordinates adds ~0.2-0.3 ms (about 3 ms on ONNX CPU). M4 numbers are not comparable to the paper's desktop-GPU FPS.
+
+```bash
+python scripts/export_onnx.py   --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth
+python scripts/export_coreml.py --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth
+python scripts/quantize_onnx.py --config configs/tusimple_res18.py --onnx data/exports/ufld_res18.onnx --out data/exports/ufld_res18_int8.onnx
+python scripts/benchmark.py     --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth --onnx data/exports/ufld_res18.onnx --coreml data/exports/ufld_res18_fp16.mlpackage --backends torch-mps torch-cpu onnx-cpu coreml-ne
+python scripts/eval_backend.py  --config configs/tusimple_res18.py --ckpt data/checkpoints/tusimple_18.pth --backend onnx-cpu --onnx data/exports/ufld_res18.onnx
+```
 
 ## Quick start
 
