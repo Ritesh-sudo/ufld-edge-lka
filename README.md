@@ -1,19 +1,6 @@
 # Edge-Deployable Lane Detection for Lane-Keep Assist
 
-A reproduction and modernization of **Ultra Fast Structure-aware Deep Lane Detection** (Qin, Wang, Li; ECCV 2020), with an edge-deployment extension aimed at ADAS lane-keep assist. Work in progress; see `CLAUDE.md` for the plan and phases.
-
-## Credit
-
-The model, losses, data pipeline and evaluation are **ported from the authors' code**, <https://github.com/cfzd/Ultra-Fast-Lane-Detection> (MIT, Copyright (c) 2020 cfzd; notice in `THIRD_PARTY_LICENSE_UFLD.txt`). The port changes the engineering (CUDA/MPS/CPU support, no DALI/DDP, Python configs, tests), not the method. Where original logic was changed, a `# changed:` comment says what and why. Please cite the original work:
-
-```bibtex
-@InProceedings{qin2020ultra,
-  author    = {Qin, Zequn and Wang, Huanyu and Li, Xi},
-  title     = {Ultra Fast Structure-aware Deep Lane Detection},
-  booktitle = {The European Conference on Computer Vision (ECCV)},
-  year      = {2020}
-}
-```
+A reproduction and modernization of **Ultra Fast Structure-aware Deep Lane Detection**
 
 ## Status (Phases 1-5 (CUDA-NMS check and Colab training pending); Colab training still pending)
 
